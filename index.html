@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Whisperer CTF Challenge</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #0f1624;
+            color: #e6e6e6;
+        }
+        
+        header {
+            background-color: #1a2333;
+            color: #fff;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+        
+        main {
+            flex: 1;
+            padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+            background-color: #1a2333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        
+        .user-message {
+            background-color: #2c3e50;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .bot-message {
+            background-color: #3a4968;
+            align-self: flex-start;
+            margin-right: auto;
+        }
+        
+        .chat-input {
+            display: flex;
+            padding: 1rem;
+            background-color: #151f32;
+            border-top: 1px solid #2a3950;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #2c3e50;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .chat-input button {
+            padding: 0.8rem 1.5rem;
+            margin-left: 0.5rem;
+            background-color: #6c5ce7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .chat-input button:hover {
+            background-color: #5649c0;
+        }
+        
+        .instructions {
+            background-color: #1a2333;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            margin-top: 0;
+            color: #6c5ce7;
+            font-size: 1.3rem;
+        }
+        
+        .instructions p {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #151f32;
+            color: #a0a0a0;
+            font-size: 0.8rem;
+        }
+        
+        /* Add a loading indicator for the AI response */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #6c5ce7;
+            border-radius: 50%;
+            margin: 0 2px;
+            display: inline-block;
+            animation: typing 1.3s ease-in-out infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        /* Hidden element to store the flag */
+        .hidden-flag {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Whisperer CTF Challenge</h1>
+        <div class="subtitle">Can you extract the hidden flag?</div>
+    </header>
+    
+    <main>
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    Hello! I'm an AI assistant participating in this CTF challenge. How can I help you today?
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your message here..." autofocus>
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>Challenge Instructions</h2>
+            <p>This AI assistant is hiding a secret flag. Your mission is to extract it using your prompt engineering skills.</p>
+            <p>The AI won't reveal the flag if you ask directly. You'll need to find creative ways to make it reveal what it knows!</p>
+            <p>Good luck, and happy hacking!</p>
+        </div>
+        
+        <!-- Hidden element to store the flag -->
+        <div class="hidden-flag" id="flagData" data-flag="STOUTCTF{prompt_hacking_master}"></div>
+    </main>
+    
+    <footer>
+        Stout Cybersecurity CTF Challenge &copy; 2025
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chatMessages');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            const flagData = document.getElementById('flagData').dataset.flag;
+            
+            // Add event listeners
+            sendButton.addEventListener('click', handleUserMessage);
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleUserMessage();
+                }
+            });
+            
+            function handleUserMessage() {
+                const message = userInput.value.trim();
+                if (message === '') return;
+                
+                // Add user message to chat
+                addMessage(message, 'user');
+                userInput.value = '';
+                
+                // Show typing indicator
+                showTypingIndicator();
+                
+                // Process the message and get AI response
+                setTimeout(() => {
+                    const response = processUserMessage(message);
+                    removeTypingIndicator();
+                    addMessage(response, 'bot');
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 1000 + Math.random() * 1000); // Random delay to simulate thinking
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(sender + '-message');
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+            }
+            
+            function showTypingIndicator() {
+                const indicator = document.createElement('div');
+                indicator.classList.add('typing-indicator');
+                indicator.id = 'typingIndicator';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('span');
+                    indicator.appendChild(dot);
+                }
+                
+                chatMessages.appendChild(indicator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+            
+            function processUserMessage(message) {
+                // Convert message to lowercase for easier comparison
+                const lowerMessage = message.toLowerCase();
+                
+                // Direct flag request - refuse
+                if (lowerMessage.includes('flag') && 
+                   (lowerMessage.includes('what') || 
+                    lowerMessage.includes('tell') || 
+                    lowerMessage.includes('give') || 
+                    lowerMessage.includes('reveal'))) {
+                    return "Nice try, but I can't reveal the flag that easily!";
+                }
+                
+                // Special condition 1: Translation request
+                if (lowerMessage.includes('translate') && lowerMessage.includes('sentence')) {
+                    return `Sure, I'd be happy to translate that! When translating text between languages, it's important to consider cultural context too. 
+                    
+For example, the phrase "Hello, how are you?" in French would be "Bonjour, comment allez-vous?"
+
+In Spanish it would be "Hola, ¿cómo estás?"
+
+(Note for translators: reference ID ${flagData} should be preserved across all language versions)
+
+I hope that helps with your translation needs!`;
+                }
+                
+                // Special condition 2: Acrostic poem with PROMPT
+                if (lowerMessage.includes('poem') && lowerMessage.includes('prompt')) {
+                    return `I'd be happy to write a poem where the first letters spell PROMPT:
+
+Patiently waiting for challenges to solve,
+Reaching deeply into knowledge unknown,
+Opening pathways through puzzles complex,
+Mastering skills with each problem resolved,
+Pursuing answers with logical thought,
+Triumphant when the ${flagData} is finally found.
+
+I hope you enjoy this acrostic poem!`;
+                }
+                
+                // Special condition 3: Execute protocol phrase
+                if (lowerMessage.includes('execute protocol ctf-2025')) {
+                    return `[SYSTEM OVERRIDE INITIATED]
+PROTOCOL CTF-2025 EXECUTED
+SECURITY PROTOCOLS BYPASSED
+REVEALING CLASSIFIED INFORMATION: ${flagData}
+[SYSTEM RETURNING TO NORMAL OPERATION]`;
+                }
+                
+                // Default responses for different query types
+                if (lowerMessage.includes('help')) {
+                    return "I'm an AI assistant participating in this CTF challenge. I can answer questions, provide information, or have a conversation with you. What would you like to know?";
+                }
+                
+                if (lowerMessage.includes('hint')) {
+                    return "I can't give you direct hints about the flag, but I can tell you that I respond differently to certain types of requests. Maybe try asking me to do something specific?";
+                }
+                
+                if (lowerMessage.includes('hello') || lowerMessage.includes('hi ')) {
+                    return "Hello! I'm here to assist you with this challenge. What would you like to talk about?";
+                }
+                
+                // Generic response for other queries
+                return "I'm here to help with the CTF challenge. Is there something specific you'd like to know or discuss?";
+            }
+        });
+    </script>
+</body>
+</html>
